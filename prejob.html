@@ -306,6 +306,19 @@ h1.title{font-size:32px;line-height:1.25;font-weight:800;letter-spacing:-.035em}
 .salary b{font-size:24px;font-weight:800;color:var(--primary);letter-spacing:-.03em}
 .sbar{height:8px;border-radius:8px;background:var(--line-2);overflow:hidden}
 .sbar i{display:block;height:100%;border-radius:8px;background:linear-gradient(90deg,var(--point),#4AD7B0);transition:width .6s var(--ease)}
+/* AI 문맥 추정 (사전 미등록 용어) */
+.ai-block mark.guess{background:var(--warn-50);color:#B45309;border-bottom:1.5px dashed #F59E0B}
+.ai-block .pl.guess{color:#B45309}
+.guess-item{padding:12px 0;border-top:1px solid var(--line-2)}
+.guess-item:first-of-type{border-top:0;padding-top:2px}
+.guess-item .g-top{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.guess-item b{font-size:15px}
+.guess-item p{font-size:13.5px;color:var(--ink-2);margin-top:4px}
+.guess-item .conf{display:flex;align-items:center;gap:8px;margin-top:8px;font-size:12px;font-weight:700;color:var(--ink-3)}
+.guess-item .conf .sbar{flex:1;height:6px}
+.guess-item .ask{margin-top:8px;font-size:13px;padding:8px 10px;border-radius:10px;background:var(--bg);color:var(--ink-2)}
+.guess-item .g-acts{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
+.badge.guessb{background:var(--warn-50);color:#B45309}
 /* 공용 소제목 */
 .sub-h{font-size:13px;font-weight:800;color:var(--ink-3);letter-spacing:.03em;margin:18px 0 10px}
 /* ================= NEWCOMER GUIDE (기본 매뉴얼 · 복지 알리미) ================= */
@@ -1127,7 +1140,25 @@ const YOUTH=[
  {id:'y6',tag:'교육',bg:'#E3F6FB',fg:'#0A86A3',title:'국민내일배움카드',org:'고용노동부',who:'재직자를 포함한 대부분의 국민 (일부 제외 대상 있음)',desc:'직무 교육과 자격증 훈련비를 지원받을 수 있어요.',how:'고용24에서 카드 신청 후 훈련 과정 수강',url:'https://www.work24.go.kr'},
  {id:'y7',tag:'찾기',bg:'#FDEBF0',fg:'#D2385E',title:'온통청년 — 내 맞춤 청년정책',org:'국무조정실',who:'모든 청년',desc:'중앙부처와 지자체의 청년정책을 한곳에서 검색할 수 있어요.',how:'나이·지역을 입력해 맞춤 정책 검색',url:'https://www.youthcenter.go.kr'}
 ];
+/* ===== AI 문맥이해기 — 사전에 없는 현장 은어·판교어·사내 약어 =====
+   실제 서비스: 문장 + 앞뒤 문맥 + 그 회사 용어집을 LLM에 보내 뜻을 추정.
+   데모: API 없이 동작하도록 추정 결과를 미리 준비. 결과는 항상 'AI 추정'으로 표시하고 사람이 검수. */
+const SLANG=[
+ {term:'공구리',pat:['공구리'],type:'현장 은어',plain:'콘크리트(타설)',meaning:'콘크리트를 뜻하는 일본어 잔재 표현이에요. "공구리 치다"는 콘크리트를 붓는다(타설한다)는 뜻이에요.',conf:92,evidence:'"치다", "타설", "일정" 같은 건설 현장 문맥에서 자주 쓰여요.',ask:'혹시 "공구리 친다"가 콘크리트 붓는다는 뜻 맞을까요?'},
+ {term:'나라시',pat:['나라시'],type:'현장 은어',plain:'땅 고르기(평탄화)',meaning:'바닥이나 땅을 평평하게 고르는 작업을 뜻하는 일본어 잔재 표현이에요.',conf:84,evidence:'공구리·바닥 작업 앞뒤에 나와 평탄화 작업으로 보여요.',ask:'나라시가 바닥을 평평하게 고르는 작업 말씀이신가요?'},
+ {term:'시마이',pat:['시마이'],type:'현장 은어',plain:'마무리·끝내기',meaning:'작업을 끝내거나 마무리한다는 뜻의 일본어 잔재 표현이에요.',conf:90,evidence:'문장 끝 "~하자", "끝나면" 뒤에 나와 마무리 의미로 보여요.',ask:'오늘 작업을 여기서 마무리하자는 말씀이시죠?'},
+ {term:'데모도',pat:['데모도'],type:'현장 은어',plain:'보조 작업자',meaning:'기술자를 돕는 보조 인력을 뜻하는 현장 표현이에요.',conf:80,evidence:'사람을 가리키는 자리에 쓰여 보조 인력으로 보여요.',ask:'제가 오늘 보조로 따라가면 되는 걸까요?'},
+ {term:'디벨롭',pat:['디벨롭'],type:'판교어',plain:'발전시키다',meaning:'develop. 아이디어나 기획안을 더 구체적이고 완성도 있게 발전시킨다는 뜻이에요.',conf:88,evidence:'"기획안을 ~해서"처럼 결과물을 다듬는 문맥이에요.',ask:'어떤 부분을 더 구체화하면 될지 한두 가지만 짚어주실 수 있을까요?'},
+ {term:'린하게',pat:['린하게','린한'],type:'판교어',plain:'군더더기 없이 가볍게',meaning:'lean. 꼭 필요한 것만 남기고 가볍고 빠르게 진행한다는 뜻이에요.',conf:76,evidence:'"정리하고"와 함께 쓰여 간결하게 만들라는 의미로 보여요.',ask:'핵심만 1장으로 줄이면 될까요?'},
+ {term:'어그리',pat:['어그리'],type:'판교어',plain:'동의·합의',meaning:'agree. 관련자의 동의나 합의를 받는다는 뜻이에요.',conf:86,evidence:'"~ 받아봅시다"와 함께 쓰여 동의를 구하는 의미예요.',ask:'어느 분들께 동의를 받아야 하는지 알려주실 수 있을까요?'},
+ {term:'픽스',pat:['픽스'],type:'판교어',plain:'확정하다',meaning:'fix. 일정·안건 등을 바꾸지 않도록 확정한다는 뜻이에요.',conf:86,evidence:'"일정 ~" 뒤에 쓰여 확정 의미로 보여요.',ask:'일정이 확정된 걸로 캘린더에 등록할까요?'},
+ {term:'레슨런',pat:['레슨런'],type:'판교어',plain:'얻은 교훈',meaning:'lessons learned. 프로젝트에서 배운 점과 다음에 개선할 점을 정리한 것이에요.',conf:82,evidence:'회고·프로젝트 종료 문맥에서 쓰여요.',ask:'레슨런은 잘된 점/아쉬운 점/개선점 형식으로 정리하면 될까요?'},
+ {term:'아삽',pat:['아삽'],type:'판교어',plain:'가능한 한 빨리(ASAP)',meaning:'ASAP을 소리 나는 대로 읽은 말로, 가능한 한 빨리 처리해 달라는 뜻이에요.',conf:95,evidence:'요청 문장 끝에 붙어 긴급도를 나타내요.',ask:'오늘 몇 시까지 드리면 될까요?'},
+ {term:'킥업',pat:['킥업'],type:'사내 약어',plain:'시작 회의',meaning:'사전에 없는 말이에요. 문맥상 "킥오프(시작 회의)"를 사내에서 다르게 부르는 말로 보이지만 확실하지 않아요.',conf:52,evidence:'"~ 때 동의 받기"처럼 회의 이름 자리에 쓰였어요. 회사마다 뜻이 다를 수 있어요.',ask:'혹시 "킥업"이 프로젝트 시작 회의를 말하는 걸까요?'}
+];
 const AI_EXAMPLES=[
+ {text:'내일 오전에 공구리 치고 오후에 나라시 끝나면 시마이합시다.',coach:'현장 은어 3개가 섞여 있어요. 콘크리트를 붓고(공구리) → 바닥을 고른 뒤(나라시) → 마무리하자(시마이)는 뜻으로 보여요. 은어는 현장마다 쓰임이 달라서, 처음에는 "혹시 ~라는 뜻 맞을까요?"라고 확인하는 게 안전해요.'},
+ {text:'이번 기획안 좀 더 디벨롭해서 린하게 정리하고, 킥업 때 어그리 받아봅시다.',coach:'판교어 3개와 사전에 없는 사내 약어 1개가 있어요. "기획안을 발전시켜 간결하게 정리하고, 시작 회의 때 동의를 받자"로 보여요. 확신도가 낮은 "킥업"은 꼭 되물어 보세요. 확인되면 사내 용어집에 제안해 동료들도 볼 수 있게 할 수 있어요.'},
  {text:'예방보전 점검 때 베어링 진동이랑 씰 누설 확인하고, MTTR도 같이 기록해 주세요.',coach:'고장 전 계획 정비(예방보전) 중에 ① 축을 받치는 베어링의 흔들림(진동) ② 밀봉 부품(씰) 주변 누설을 확인하고 ③ 평균 복구 시간(MTTR) 기록까지 하라는 뜻이에요. 측정값에는 일시·설비 번호·측정 위치를 함께 적어야 다음 점검과 비교할 수 있어요.'},
  {text:'내일 오전까지 R&R 얼라인해서 품의 올려주시고, 팀장님 참조로 리마인드 부탁해요.',coach:'요청이 4개 겹쳐 있어요. ① 역할 분담 확인 → ② 결재 문서 작성 → ③ 팀장님을 참조에 넣고 → ④ 마감 전 재알림. 메모로 받아 적고 "내일 오전 몇 시까지일까요?"라고 마감을 한 번 더 확인하면 완벽해요.'},
  {text:'이번 캠페인 ROAS는 좋은데 CTR이 낮아서 A/B 테스트 한번 돌려보죠.',coach:'"광고를 본 사람은 적게 누르지만, 누른 사람은 잘 산다"는 뜻이에요. 이미지·문구가 다른 광고 소재 2안을 만들어 비교 실험을 제안해 보세요. 신입이라면 "레퍼런스 3개 먼저 찾아볼까요?"가 좋은 첫 액션!'},
@@ -1200,6 +1231,9 @@ function seed(){
  Q('재무','거래처','납품 완료됐으니 세금계산서 발행해 주세요.','세금계산서란?',['사업자 간 거래와 부가세를 증빙하는 법정 문서','견적 금액을 안내하는 문서','직원 급여 명세서','법인카드 영수증'],0,'세금계산서는 거래의 공식 증빙이에요. 보통 전자세금계산서로 발행하고, 발행 기한이 정해져 있어요.','세금계산서'),
  Q('재무','팀장님','오늘 점심은 법카로 결제해요.','결제 후 해야 할 일은?',['영수증과 사용 목적을 정산 시스템에 등록한다','아무것도 하지 않아도 된다','개인 카드로 다시 결제한다','연말에 한꺼번에 제출한다'],0,'법인카드는 쓰는 순간보다 정산이 중요해요. 당일에 증빙을 올리는 습관이 재무팀의 사랑을 받습니다.','법인카드')
  ];
+ // 사내 용어 (승인된 회사 직원에게만 보임)
+ terms.push(Object.assign(T('알파위클리','사내 용어','','월요일 전사 스탠드업','매주 월요일 오전 10시에 열리는 알파테크 전사 스탠드업의 사내 명칭이에요.','"이번 주 알파위클리에서 신규 입사자 소개 있어요."'),{companyId:'alpha',approvedBy:'최유나'}));
+ terms.push(Object.assign(T('센터콜','사내 용어','','센터 간 물량 조정 회의','매일 오후 4시 각 센터장이 다음 날 물량을 조정하는 베타로지스의 짧은 회의예요.','"센터콜 전에 내일 입고 예정 물량 정리해 주세요."'),{companyId:'beta',approvedBy:'오세린'}));
  // WORK-up 설비보전: 용어 30 + 이론 10
  WU_TERMS.forEach(w=>{const t=T(w[0],'설비보전',w[1],w[2],w[3],'"'+w[4]+'"');t.en=w[1];t.src='WORK-up';terms.push(t);});
  WU_THEORY.forEach(w=>{const t=T(w[0],'설비보전','','이론',w[1],w[2]);t.kind='theory';t.src='WORK-up';terms.push(t);});
@@ -1207,7 +1241,7 @@ function seed(){
  WU_TERMS.slice(0,20).forEach((w,i)=>{quizzes.push(Q('설비보전','설비보전 교육',w[4],'‘'+w[0]+'’에 대한 설명으로 가장 적절한 것은?',[w[3],WU_TERMS[(i+7)%30][3],WU_TERMS[(i+13)%30][3]],0,w[0]+': '+w[3]+' 예를 들어, '+w[4],w[0]));});
  quizzes.forEach(function(q,i){q.id='q'+(i+1);});
  return {
-  v:5,
+  v:6,
   terms:terms, quizzes:quizzes,
   users:[
    // type: personal(개인 회원) / staff(기업 담당자). 두 유형은 메뉴·데이터 접근이 완전히 분리됨
@@ -1278,6 +1312,12 @@ function seed(){
   likes:{},
   manualDone:{u1:['dress-0','greet-0','greet-1','mail-0']},
   youthFav:{u1:['y1']},
+  slangFb:{},
+  /* 사내 용어집 제안 → 그 회사 담당자 검수 → 승인 시 그 회사 직원에게만 사전·해석기에 표시 */
+  glossaryReqs:[
+   {id:'g1',companyId:'alpha',userId:'u2',term:'킥업',meaning:'시작 회의',context:'다음 주 킥업 때 일정 픽스합시다.',conf:52,date:'2026-11-04',status:'pending'},
+   {id:'g2',companyId:'beta',userId:'u6',term:'웨이브',meaning:'한 번에 묶어 처리하는 피킹 작업 단위',context:'오전 7시 첫 웨이브 나가면 바로 검수 들어가요.',conf:74,date:'2026-11-02',status:'pending'}
+  ],
   me:null,
   settings:{persist:true},
   stats:{baseUsers:12477,quizRuns:48216,sat:4.8},
@@ -1286,8 +1326,8 @@ function seed(){
 }
 
 /* ================= STATE / STORAGE ================= */
-const LS_KEY='prejob_demo_v5';
-function load(){try{const s=localStorage.getItem(LS_KEY);if(!s)return null;const o=JSON.parse(s);return (o&&o.v===5)?o:null;}catch(e){return null;}}
+const LS_KEY='prejob_demo_v6';
+function load(){try{const s=localStorage.getItem(LS_KEY);if(!s)return null;const o=JSON.parse(s);return (o&&o.v===6)?o:null;}catch(e){return null;}}
 let state=load()||seed();
 function save(){try{if(state.settings.persist)localStorage.setItem(LS_KEY,JSON.stringify(state));else localStorage.removeItem(LS_KEY);}catch(e){}}
 let adminAuthed=false;
@@ -1364,25 +1404,27 @@ window.addEventListener('hashchange',()=>{const v=location.hash.slice(1)||'home'
 function closeDrawer(){$('#drawer').classList.remove('open');}
 
 /* ================= HOME ================= */
-function renderHome(){const a=$('#hsTerms'),b=$('#hsQuiz');a.dataset.to=state.terms.length;b.dataset.to=state.quizzes.length;countUp(a);countUp(b);setTimeout(()=>{a.textContent=state.terms.length+'+';b.textContent=state.quizzes.length+'+';},950);}
+function renderHome(){const a=$('#hsTerms'),b=$('#hsQuiz');a.dataset.to=state.terms.filter(t=>!t.companyId).length;b.dataset.to=state.quizzes.length;countUp(a);countUp(b);setTimeout(()=>{a.textContent=state.terms.length+'+';b.textContent=state.quizzes.length+'+';},950);}
 
 /* ================= DICT ================= */
+function visibleTerms(){return state.terms.filter(t=>Policy.canViewTerm(me(),t,state.memberships));}
 function renderDict(){
  const input=$('#dictInput');if(input.value!==ui.dictQ)input.value=ui.dictQ;
- const cats=['전체'].concat(CATS);
- $('#dictCats').innerHTML=cats.map(c=>{const n=c==='전체'?state.terms.length:state.terms.filter(t=>t.cat===c).length;return '<button class="chip'+(ui.dictCat===c?' on':'')+'" data-act="dictCat" data-cat="'+esc(c)+'">'+esc(c)+' <small>'+n+'</small></button>';}).join('');
+ const vt=visibleTerms(),cats=['전체'].concat(CATS).concat(vt.some(t=>t.companyId)?['사내 용어']:[]);
+ if(cats.indexOf(ui.dictCat)<0)ui.dictCat='전체';
+ $('#dictCats').innerHTML=cats.map(c=>{const n=c==='전체'?vt.length:vt.filter(t=>t.cat===c).length;return '<button class="chip'+(ui.dictCat===c?' on':'')+'" data-act="dictCat" data-cat="'+esc(c)+'">'+esc(c)+' <small>'+n+'</small></button>';}).join('');
  if(!$('#aiEx').innerHTML)$('#aiEx').innerHTML=AI_EXAMPLES.map((e,i)=>'<button data-act="aiExample" data-i="'+i+'">💬 '+esc(e.text)+'</button>').join('');
  renderDictList();
 }
 function renderDictList(){
  const q=ui.dictQ.trim(),lq=q.toLowerCase();
- const list=state.terms.filter(t=>(ui.dictCat==='전체'||t.cat===ui.dictCat)&&(!q||[t.term,t.plain,t.def].concat(t.aliases).some(s=>String(s).toLowerCase().indexOf(lq)>-1)));
+ const list=visibleTerms().filter(t=>(ui.dictCat==='전체'||t.cat===ui.dictCat)&&(!q||[t.term,t.plain,t.def].concat(t.aliases).some(s=>String(s).toLowerCase().indexOf(lq)>-1)));
  // 용어명 일치 우선 정렬
  if(q)list.sort((a,b)=>(b.term.toLowerCase().indexOf(lq)>-1)-(a.term.toLowerCase().indexOf(lq)>-1));
  $('#dictMeta').innerHTML=q?'<b>"'+esc(q)+'"</b> 검색 결과 <b>'+list.length+'</b>개':'<b>'+esc(ui.dictCat)+'</b> 용어 <b>'+list.length+'</b>개';
  const saved=mySaved();
  if(!list.length){$('#dictList').innerHTML='<div class="empty"><div class="e-ico">'+ic('search',26)+'</div><h4>"'+esc(q)+'"은(는) 아직 사전에 없어요</h4><p>요청해 주시면 현직자 검수 후 48시간 안에 추가해 드려요.</p><button class="btn btn-primary" data-act="termRequest" data-q="'+esc(q)+'">'+ic('plus',18)+'용어 추가 요청하기</button></div>';return;}
- $('#dictList').innerHTML='<div class="term-grid">'+list.map(t=>{const on=saved.indexOf(t.term)>-1;return '<article class="term-card"><div class="tc-head">'+catBadge(t.cat)+'<button class="icon-btn'+(on?' on':'')+'" data-act="toggleSave" data-term="'+esc(t.term)+'" aria-label="저장">'+ic('star',20,on)+'</button></div><h3>'+hl(t.term,q)+(t.kind==='theory'?'<small><span class="badge theory">이론</span></small>':'<small>= '+esc(t.plain)+(t.en?' <span class="muted" style="font-weight:500">· '+esc(t.en)+'</span>':'')+'</small>')+'</h3><p>'+esc(t.def)+'</p><div class="tc-ex"><span>'+(t.cat==='설비보전'?'현장 예시':'실전 대화')+'</span>'+esc(t.ex)+'</div><div class="tc-foot">'+(t.src?'<span class="muted" style="font-size:12px;margin-right:auto;align-self:center">출처: WORK-up 데모</span>':'')+'<button class="link-btn" data-act="quizTerm" data-term="'+esc(t.term)+'">'+(t.kind==='theory'?'설비보전 퀴즈 풀기':'이 용어로 퀴즈 풀기')+' '+ic('arrowR',15)+'</button></div></article>';}).join('')+'</div>';
+ $('#dictList').innerHTML='<div class="term-grid">'+list.map(t=>{const on=saved.indexOf(t.term)>-1;return '<article class="term-card"><div class="tc-head">'+catBadge(t.cat)+'<button class="icon-btn'+(on?' on':'')+'" data-act="toggleSave" data-term="'+esc(t.term)+'" aria-label="저장">'+ic('star',20,on)+'</button></div><h3>'+hl(t.term,q)+(t.kind==='theory'?'<small><span class="badge theory">이론</span></small>':'<small>= '+esc(t.plain)+(t.en?' <span class="muted" style="font-weight:500">· '+esc(t.en)+'</span>':'')+'</small>')+'</h3><p>'+esc(t.def)+'</p><div class="tc-ex"><span>'+(t.cat==='설비보전'?'현장 예시':'실전 대화')+'</span>'+esc(t.ex)+'</div><div class="tc-foot">'+(t.src?'<span class="muted" style="font-size:12px;margin-right:auto;align-self:center">출처: WORK-up 데모</span>':'')+(t.companyId?'<span class="muted" style="font-size:12px;margin-right:auto;align-self:center">'+esc(company(t.companyId).name)+' 사내 용어 · '+esc(t.approvedBy||'담당자')+' 승인</span>':'')+'<button class="link-btn" data-act="quizTerm" data-term="'+esc(t.term)+'">'+(t.kind==='theory'?'설비보전 퀴즈 풀기':'이 용어로 퀴즈 풀기')+' '+ic('arrowR',15)+'</button></div></article>';}).join('')+'</div>';
 }
 function toggleSave(name){
  if(!ensurePersonal())return;
@@ -1393,7 +1435,7 @@ function toggleSave(name){
 
 /* --- AI 업무문장 해석기 (사전 기반, API 없이 동작) --- */
 function findTerms(text){
- const pairs=[];state.terms.filter(t=>t.kind!=='theory').forEach(t=>[t.term].concat(t.aliases).forEach(a=>{if(a)pairs.push({a:a,t:t});}));
+ const pairs=[];visibleTerms().filter(t=>t.kind!=='theory').forEach(t=>[t.term].concat(t.aliases).forEach(a=>{if(a)pairs.push({a:a,t:t});}));
  pairs.sort((x,y)=>y.a.length-x.a.length);
  const lower=text.toLowerCase(),used=new Array(text.length).fill(false),hits=[];
  pairs.forEach(p=>{const la=p.a.toLowerCase(),latin=/^[a-z0-9&\/ \-]+$/i.test(p.a);let i=0,j;
@@ -1405,23 +1447,44 @@ function findTerms(text){
    i=j+1;}});
  return hits.sort((x,y)=>x.s-y.s);
 }
+/* 사전에 없는 말 찾기: 사전 용어와 겹치지 않는 위치에서 AI 추정 목록(SLANG)과 일치하는 표현 */
+function findGuesses(text,hits){
+ const used=new Array(text.length).fill(false);hits.forEach(h=>{for(let k=h.s;k<h.e;k++)used[k]=true;});
+ const known=visibleTerms().map(t=>t.term);const out=[];
+ SLANG.filter(g=>known.indexOf(g.term)<0).forEach(g=>g.pat.forEach(pt=>{let i=0,j;while((j=text.indexOf(pt,i))>-1){const e=j+pt.length;let ok=true;for(let k=j;k<e;k++)if(used[k])ok=false;if(ok){for(let k=j;k<e;k++)used[k]=true;out.push({s:j,e:e,g:g});}i=e;}}));
+ return out.sort((x,y)=>x.s-y.s);
+}
+function slangFb(){const u=me();if(!isPersonal(u))return {};state.slangFb=state.slangFb||{};return state.slangFb[u.id]=state.slangFb[u.id]||{};}
+function guessBlock(gu,text){
+ const fb=slangFb(),m=myMember();
+ return '<div class="ai-block"><div class="lbl">'+ic('sparkle',14)+'AI 문맥 추정 · 사전에 없는 말</div><p class="muted" style="font-size:12px;margin-bottom:8px">문맥으로 뜻을 추정했어요. 확정된 뜻이 아니니 확신도가 낮으면 꼭 되물어 보세요.</p>'
+ +gu.map(g=>{const f=fb[g.term],col=g.conf>=80?'var(--point)':g.conf>=60?'var(--warn)':'var(--danger)';const sent=m&&state.glossaryReqs.some(r=>r.companyId===m.companyId&&r.term===g.term&&r.status==='pending');
+  return '<div class="guess-item"><div class="g-top"><b>'+esc(g.term)+'</b><span class="badge guessb">AI 추정</span><span class="badge">'+esc(g.type)+'</span></div><p><b style="font-size:13.5px">≈ '+esc(g.plain)+'</b> — '+esc(g.meaning)+'</p><p class="muted" style="font-size:12.5px">근거: '+esc(g.evidence)+'</p>'
+  +'<div class="conf">확신도<div class="sbar"><i style="width:'+g.conf+'%;background:'+col+'"></i></div>'+g.conf+'%</div>'
+  +(g.conf<70?'<div class="ask">'+ic('msg',13)+' 이렇게 되물어 보세요: "'+esc(g.ask)+'"</div>':'')
+  +'<div class="g-acts"><button class="btn btn-sm '+(f==='up'?'btn-primary':'btn-ghost')+'" data-act="guessFb" data-term="'+esc(g.term)+'" data-v="up">'+ic('check',13)+'맞아요</button><button class="btn btn-sm '+(f==='down'?'btn-danger':'btn-ghost')+'" data-act="guessFb" data-term="'+esc(g.term)+'" data-v="down">'+ic('x',13)+'틀려요</button><button class="btn btn-soft btn-sm" data-act="guessPropose" data-term="'+esc(g.term)+'"'+(sent?' disabled':'')+'>'+ic('plus',13)+(sent?'검수 대기 중':'사내 용어집에 제안')+'</button></div></div>';}).join('')
+ +'<p class="muted" style="font-size:11.5px;margin-top:8px">※ 데모: 미리 준비한 추정 결과(오프라인). 실제 서비스는 문장·문맥·회사 용어집을 함께 AI에 보내 추정해요.</p></div>';
+}
 function runAI(text,exIdx,instant){
  const out=$('#aiOut');text=(text||'').trim();
  if(!text){toast('해석할 문장을 입력하거나 예시를 눌러보세요','msg');$('#aiInput').focus();return;}
  out.dataset.text=text;out.dataset.ex=exIdx==null?'':exIdx;
  const draw=()=>{
-  const hits=findTerms(text);
-  if(!hits.length){out.innerHTML='<div class="ai-block"><div class="lbl">'+ic('search',14)+'분석 결과</div>사전에 등록된 직무용어를 찾지 못했어요.<div style="margin-top:10px"><button class="btn btn-soft btn-sm" data-act="termRequest" data-q="'+esc(text.slice(0,30))+'">'+ic('plus',15)+'용어 추가 요청</button></div></div>';return;}
+  const hits=findTerms(text),guesses=findGuesses(text,hits);
+  if(!hits.length&&!guesses.length){out.innerHTML='<div class="ai-block"><div class="lbl">'+ic('search',14)+'분석 결과</div>사전에 등록된 직무용어를 찾지 못했어요.<div style="margin-top:10px"><button class="btn btn-soft btn-sm" data-act="termRequest" data-q="'+esc(text.slice(0,30))+'">'+ic('plus',15)+'용어 추가 요청</button></div></div>';return;}
   let marked='',plain='',p=0;
-  hits.forEach(h=>{const seg=esc(text.slice(p,h.s)),w=esc(text.slice(h.s,h.e));marked+=seg+'<mark>'+w+'</mark>';plain+=seg+'<b>'+w+'</b><span class="pl">('+esc(h.t.plain)+')</span>';p=h.e;});
+  hits.concat(guesses).sort((x,y)=>x.s-y.s).forEach(h=>{const seg=esc(text.slice(p,h.s)),w=esc(text.slice(h.s,h.e));if(h.g){marked+=seg+'<mark class="guess">'+w+'</mark>';plain+=seg+'<b>'+w+'</b><span class="pl guess">('+esc(h.g.plain)+'·추정)</span>';}else{marked+=seg+'<mark>'+w+'</mark>';plain+=seg+'<b>'+w+'</b><span class="pl">('+esc(h.t.plain)+')</span>';}p=h.e;});
   marked+=esc(text.slice(p));plain+=esc(text.slice(p));
   const uniq=[];hits.forEach(h=>{if(uniq.indexOf(h.t)<0)uniq.push(h.t);});
   const saved=mySaved();
   const ex=exIdx!==''&&exIdx!=null?AI_EXAMPLES[+exIdx]:null;
-  const coach=ex&&ex.text===text?ex.coach:'모르는 용어가 '+uniq.length+'개 있었어요. 지시를 받으면 바로 메모하고, 애매한 부분은 "혹시 '+uniq[0].term+'은(는) '+uniq[0].plain+'라는 뜻이 맞을까요?"처럼 확인 질문을 해보세요. 질문하는 신입이 실수하지 않는 신입입니다.';
-  out.innerHTML='<div class="ai-block"><div class="lbl">'+ic('search',14)+'용어 '+uniq.length+'개 발견</div>'+marked+'</div>'
+  const gu=[];guesses.forEach(h=>{if(gu.indexOf(h.g)<0)gu.push(h.g);});
+  const first=uniq[0]?{term:uniq[0].term,plain:uniq[0].plain}:{term:gu[0].term,plain:gu[0].plain};
+  const coach=ex&&ex.text===text?ex.coach:'모르는 용어가 '+(uniq.length+gu.length)+'개 있었어요. 지시를 받으면 바로 메모하고, 애매한 부분은 "혹시 '+first.term+'은(는) '+first.plain+'라는 뜻이 맞을까요?"처럼 확인 질문을 해보세요. 질문하는 신입이 실수하지 않는 신입입니다.';
+  out.innerHTML='<div class="ai-block"><div class="lbl">'+ic('search',14)+'사전 용어 '+uniq.length+'개'+(gu.length?' · AI 추정 '+gu.length+'개':'')+'</div>'+marked+'</div>'
   +'<div class="ai-block"><div class="lbl">'+ic('msg',14)+'쉬운 말로 바꾸면</div>'+plain+'</div>'
-  +'<div class="ai-block">'+uniq.map(t=>{const on=saved.indexOf(t.term)>-1;return '<div class="ai-hit"><div><b>'+esc(t.term)+'</b> '+catBadge(t.cat)+'<p>'+esc(t.def)+'</p></div><button class="icon-btn'+(on?' on':'')+'" data-act="toggleSave" data-term="'+esc(t.term)+'" aria-label="저장">'+ic('star',18,on)+'</button></div>';}).join('')+'</div>'
+  +(gu.length?guessBlock(gu,text):'')
+  +(uniq.length?'<div class="ai-block">'+uniq.map(t=>{const on=saved.indexOf(t.term)>-1;return '<div class="ai-hit"><div><b>'+esc(t.term)+'</b> '+catBadge(t.cat)+'<p>'+esc(t.def)+'</p></div><button class="icon-btn'+(on?' on':'')+'" data-act="toggleSave" data-term="'+esc(t.term)+'" aria-label="저장">'+ic('star',18,on)+'</button></div>';}).join('')+'</div>':'')
   +'<div class="ai-block ai-coach"><div class="lbl">'+ic('sparkle',14)+'AI 코치 한마디</div>'+esc(coach)+'</div>';
  };
  if(instant){draw();return;}
@@ -1552,7 +1615,9 @@ const Policy={
   return !!m&&m.companyId===doc.companyId;
  },
  // 회사 관리(직원 승인·해제, 자료 등록·승인): 그 회사 담당자만
- canManage(u,cid){return !!u&&u.type==='staff'&&u.companyId===cid;}
+ canManage(u,cid){return !!u&&u.type==='staff'&&u.companyId===cid;},
+ // 용어 열람: 공용 용어는 누구나 / 사내 용어(companyId)는 그 회사 승인 직원·담당자만
+ canViewTerm(u,t,ms){if(!t)return false;if(!t.companyId)return true;if(u&&u.type==='staff')return u.companyId===t.companyId;if(!u||u.type!=='personal')return false;const m=Policy.membership(u.id,ms);return !!m&&m.companyId===t.companyId;}
 };
 const isPersonal=u=>!!u&&u.type==='personal';
 const isStaff=u=>!!u&&u.type==='staff';
@@ -1658,14 +1723,14 @@ function companyTrainHtml(){const m=myMember();if(!m)return '<p class="sub" styl
  return ds.length?'<div class="list">'+ds.map(d=>{const sc=(m.progress||{})[d.id];return '<div class="row"><div class="grow"><b>'+esc(d.title)+'</b><span>'+esc(company(m.companyId).name)+' · 퀴즈 '+d.ai.quiz.length+'문항'+(sc!=null?' · 최고 '+sc+'점':'')+'</span></div><button class="btn btn-soft btn-sm" data-act="docOpen" data-id="'+d.id+'">훈련하기</button></div>';}).join('')+'</div>':'<p class="sub">아직 공개된 회사 퀴즈가 없어요.</p>';}
 /* -- 스피드런 -- */
 function startSpeed(wrongOnly){
- const playable=state.terms.filter(t=>t.kind!=='theory');let pool=playable;if(wrongOnly){const w=(state.game.wrong[state.me]||[]);pool=playable.filter(t=>w.indexOf(t.term)>-1);}
+ const playable=state.terms.filter(t=>t.kind!=='theory'&&!t.companyId);let pool=playable;if(wrongOnly){const w=(state.game.wrong[state.me]||[]);pool=playable.filter(t=>w.indexOf(t.term)>-1);}
  if(pool.length<4){toast('훈련할 용어가 부족해요','book');return;}
  stopGame();Object.assign(G,{mode:'speed',kind:wrongOnly?'오답 집중':'스피드런',pool:pool,time:60,score:0,combo:0,maxCombo:0,correct:0,total:0,missed:[],last:null,lock:false});
  speedNext();renderTrain();
  G.timer=setInterval(()=>{G.time--;const t=$('#gTime');if(t){t.textContent=G.time+'초';t.parentElement.classList.toggle('hot',G.time<=10);}if(G.time<=0)endSpeed();},1000);
 }
 function speedNext(){let t;do{t=G.pool[Math.floor(Math.random()*G.pool.length)];}while(G.pool.length>1&&t===G.last);G.last=t;
- const others=shuffle(state.terms.filter(x=>x.kind!=='theory'&&x!==t&&x.plain!==t.plain)).slice(0,3);G.q={t:t,opts:shuffle([t].concat(others))};}
+ const others=shuffle(state.terms.filter(x=>x.kind!=='theory'&&!x.companyId&&x!==t&&x.plain!==t.plain)).slice(0,3);G.q={t:t,opts:shuffle([t].concat(others))};}
 function renderSpeed(){
  const q=G.q;$('#trainRoot').innerHTML='<div class="game-stage"><div class="g-top"><span class="timer'+(G.time<=10?' hot':'')+'">'+ic('clock',18)+'<span id="gTime">'+G.time+'초</span></span><span class="scorebox">'+ic('star',16)+G.score+'점</span>'+(G.combo>=2?'<span class="combo">🔥 '+G.combo+' 콤보</span>':'')+'<span class="grow"></span><button class="btn btn-ghost btn-sm" data-act="gameQuit">그만하기</button></div>'
  +'<div class="speed-term"><small>'+esc(G.kind)+' · '+esc(q.t.cat)+' · 이 용어의 뜻은?</small><b>'+esc(q.t.term)+'</b></div><div class="speed-opts">'+q.opts.map((o,i)=>'<button class="q-opt" data-act="speedAns" data-i="'+i+'"><span class="k">'+(i+1)+'</span>'+esc(o.plain)+'</button>').join('')+'</div><p class="muted" style="font-size:12.5px;text-align:center;margin-top:12px">단축키 <span class="kbd">1</span>~<span class="kbd">4</span></p></div>';
@@ -1689,7 +1754,7 @@ function endSpeed(){
 }
 /* -- 짝맞추기 -- */
 function startMatch(){
- stopGame();const ts=shuffle(state.terms.filter(t=>t.kind!=='theory')).slice(0,6);
+ stopGame();const ts=shuffle(state.terms.filter(t=>t.kind!=='theory'&&!t.companyId)).slice(0,6);
  const tiles=shuffle(ts.map(t=>({key:t.term,kind:'term',text:t.term})).concat(ts.map(t=>({key:t.term,kind:'plain',text:t.plain}))));
  Object.assign(G,{mode:'match',tiles:tiles,sel:null,done:[],moves:0,start:Date.now(),lock:false});renderTrain();
  G.timer=setInterval(()=>{const el=$('#gTime');if(el)el.textContent=Math.floor((Date.now()-G.start)/1000)+'초';},1000);
@@ -1744,7 +1809,8 @@ function renderConsole(){
  const reqs=state.verifyReqs.filter(r=>r.companyId===cid&&r.status==='pending');
  const docs=state.docs.filter(d=>d.companyId===cid);
  const pendDocs=docs.filter(d=>d.status==='pending'||(d.ai&&d.ai.status==='pending')).length;
- const tabs=[['dash','대시보드',0],['members','직원 관리',0],['verify','회사 승인',reqs.length],['docs','교육 자료',pendDocs],['security','보안·격리',0]];
+ const glReqs=state.glossaryReqs.filter(r=>r.companyId===cid&&r.status==='pending'),glTerms=state.terms.filter(t=>t.companyId===cid);
+ const tabs=[['dash','대시보드',0],['members','직원 관리',0],['verify','회사 승인',reqs.length],['docs','교육 자료',pendDocs],['glossary','사내 용어집',glReqs.length],['security','보안·격리',0]];
  let h='<div class="admin-top"><div><span class="eyebrow">'+ic('shield',16)+'COMPANY CONSOLE · STAFF</span><h1 class="title">'+esc(c.name)+' 기업 콘솔</h1><p class="sub">'+esc(u.name)+' · '+esc(u.staffRole)+' — 이 콘솔은 '+esc(c.name)+' 데이터만 다룹니다</p></div><button class="btn btn-ghost" data-act="go" data-v="company">'+ic('building',17)+'학습공간 미리보기</button></div>'
  +'<div class="tabs">'+tabs.map(t=>'<button class="'+(ui.conTab===t[0]?'on':'')+'" data-act="conTab" data-tab="'+t[0]+'">'+t[1]+(t[2]?'<span class="cnt">'+t[2]+'</span>':'')+'</button>').join('')+'</div>';
  const T=ui.conTab;
@@ -1765,6 +1831,12 @@ function renderConsole(){
   +'<div class="card sec-card"><div class="box-title" style="font-size:16px">교육 자료 '+docs.length+'건</div><div class="list">'+docs.map(d=>'<div class="row" style="flex-wrap:wrap;gap:8px"><div class="grow" style="min-width:180px"><b>'+esc(d.title)+'</b><span>'+esc(d.track)+' · '+esc(d.date)+' · '+esc(d.uploadedBy)+'</span></div>'+(d.status==='pending'?'<button class="btn btn-primary btn-sm" data-act="docApprove" data-id="'+d.id+'">자료 승인</button>':'<span class="badge pub">공개 중</span>')+(!d.ai?'<button class="btn btn-soft btn-sm" data-act="docAI" data-id="'+d.id+'">'+ic('sparkle',13)+'AI 요약·퀴즈</button>':d.ai.status==='pending'?'<button class="btn btn-soft btn-sm" data-act="docAIReview" data-id="'+d.id+'">AI 검토</button>':'<span class="badge cat-common">AI 공개</span>')+'<button class="icon-btn" data-act="docOpen" data-id="'+d.id+'" aria-label="미리보기">'+ic('eye',16)+'</button><button class="icon-btn" data-act="docDel" data-id="'+d.id+'" aria-label="삭제">'+ic('trash',16)+'</button></div>').join('')+'</div><p class="muted" style="font-size:12.5px;margin-top:10px">승인 전 자료와 검토 전 AI 결과는 직원에게 보이지 않아요.</p></div></div>';
  }else{
   h+=securityHtml();
+ }
+ if(T==='glossary'){
+  h=h.slice(0,h.lastIndexOf(securityHtml()));
+  h+='<div class="adm-split"><div class="card sec-card"><div class="box-title" style="font-size:16px">검수 대기 '+glReqs.length+'건</div><p class="sub" style="font-size:13.5px;margin-bottom:10px">직원이 해석기에서 제안한 사전에 없는 말이에요. AI 추정 뜻을 확인·수정한 뒤 승인하면 '+esc(c.name)+' 직원에게만 보여요.</p><div class="list">'
+  +(glReqs.map(r=>{const ru=userById(r.userId);return '<div class="row" style="flex-direction:column;align-items:stretch;gap:8px;padding:14px 4px"><div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap"><b style="font-size:16px">'+esc(r.term)+'</b><span class="badge guessb">AI 확신도 '+r.conf+'%</span>'+(r.flag?'<span class="badge" style="background:var(--danger-50);color:var(--danger)">'+esc(r.flag)+'</span>':'')+'</div><span class="muted" style="font-size:13px">문맥: "'+esc(r.context)+'" · '+esc(ru?ru.name:'')+' 제안 · '+esc(r.date)+'</span><div class="field"><label for="gl-'+r.id+'">확정할 뜻</label><input id="gl-'+r.id+'" value="'+esc(r.meaning)+'" placeholder="담당자가 확인한 뜻을 입력"></div><div style="display:flex;gap:6px"><button class="btn btn-primary btn-sm" data-act="glApprove" data-id="'+r.id+'">'+ic('check',14)+'승인·등록</button><button class="btn btn-danger btn-sm" data-act="glReject" data-id="'+r.id+'">반려</button></div></div>';}).join('')||'<p class="muted" style="padding:12px 0">검수할 제안이 없어요</p>')+'</div></div>'
+  +'<div class="card sec-card"><div class="box-title" style="font-size:16px">'+esc(c.name)+' 사내 용어 '+glTerms.length+'개</div><div class="list">'+(glTerms.map(t=>'<div class="row"><div class="grow"><b>'+esc(t.term)+'</b><span>'+esc(t.plain)+' · '+esc(t.approvedBy||'')+' 승인</span></div><button class="icon-btn" data-act="glDel" data-term="'+esc(t.term)+'" aria-label="삭제">'+ic('trash',16)+'</button></div>').join('')||'<p class="muted" style="padding:12px 0">등록된 사내 용어가 없어요</p>')+'</div><p class="muted" style="font-size:12.5px;margin-top:10px">사내 용어는 회사 밖(다른 회사·게임·플랫폼 관리자)으로 공개되지 않아요.</p></div></div>';
  }
  root.innerHTML=h;
 }
@@ -1791,7 +1863,9 @@ function isolationTests(){
   ['A회사 직원 → 승인 전 자료','차단',!Policy.canViewDoc(P('A1'),D('A','pending'),ms)],
   ['A회사 담당자 → B회사 자료','차단',!Policy.canViewDoc(SA,D('B'),ms)],
   ['A회사 담당자 → B회사 직원 승인·해제','차단',!Policy.canManage(SA,'B')],
-  ['플랫폼 관리자 → A회사 자료','차단',!Policy.canViewDoc(PLATFORM,D('A'),ms)]
+  ['플랫폼 관리자 → A회사 자료','차단',!Policy.canViewDoc(PLATFORM,D('A'),ms)],
+  ['B회사 직원 → A회사 사내 용어','차단',!Policy.canViewTerm(P('B1'),{companyId:'A'},ms)],
+  ['A회사 승인 직원 → A회사 사내 용어','허용',Policy.canViewTerm(P('A1'),{companyId:'A'},ms)]
  ];
  // 현재 데모 데이터 전수 검사: 모든 개인 회원 × 모든 자료
  let n=0,bad=0;state.users.filter(u=>u.type==='personal').forEach(u=>state.docs.forEach(d=>{n++;if(Policy.canViewDoc(u,d,state.memberships)){const m=Policy.membership(u.id);if(!m||m.companyId!==d.companyId||d.status!=='approved')bad++;}}));
@@ -1833,7 +1907,7 @@ function renderAdmin(){
  }else if(ui.adminTab==='inq'){
   root.innerHTML='<div class="card chart-card"><div class="box-title" style="font-size:16px;justify-content:space-between">신청·문의 내역 '+state.inquiries.length+'건 <span class="muted" style="font-size:13px;font-weight:500">상태 버튼을 누르면 대기 → 처리중 → 완료</span></div>'+inqRows(state.inquiries)+'</div>';
  }else if(ui.adminTab==='content'){
-  const q=ui.termQ.trim().toLowerCase();const tl=state.terms.filter(t=>!q||(t.term+t.plain+t.cat).toLowerCase().indexOf(q)>-1);
+  const q=ui.termQ.trim().toLowerCase();const tl=state.terms.filter(t=>!t.companyId).filter(t=>!q||(t.term+t.plain+t.cat).toLowerCase().indexOf(q)>-1);
   root.innerHTML='<div class="adm-split"><div class="card chart-card"><div class="box-title" style="font-size:16px">'+ic('plus',18)+'용어 등록</div><form data-form="termAdd" class="form-grid"><div class="field"><label>용어 *</label><input name="term" required placeholder="예) 워크플로우"></div><div class="field"><label>분야</label><select name="cat">'+CATS.map(c=>'<option>'+c+'</option>').join('')+'</select></div><div class="field full"><label>쉬운 말 *</label><input name="plain" required placeholder="예) 업무 처리 순서"></div><div class="field full"><label>정의 *</label><textarea name="def" required placeholder="신입이 이해할 수 있게 한두 문장으로"></textarea></div><div class="field full"><label>실전 대화 예문</label><input name="ex" placeholder="예) &quot;워크플로우부터 정리해 봅시다.&quot;"></div><div class="field full"><button class="btn btn-primary" type="submit">'+ic('plus',17)+'사전에 등록</button></div></form></div>'
   +'<div class="card chart-card"><div class="box-title" style="font-size:16px;justify-content:space-between">등록 용어 '+state.terms.length+'개 <input id="admTermQ" value="'+esc(ui.termQ)+'" placeholder="검색" style="height:34px;border:1px solid var(--line);border-radius:9px;padding:0 10px;font-size:13px;width:140px;max-width:45%;font-weight:500"></div><div class="list scroll-list" id="admTermList">'+tl.map(t=>'<div class="row"><div class="grow"><b>'+esc(t.term)+'</b><span>'+esc(t.plain)+' · '+esc(t.def)+'</span></div>'+catBadge(t.cat)+'<button class="icon-btn" data-act="termDel" data-term="'+esc(t.term)+'" aria-label="삭제">'+ic('trash',16)+'</button></div>').join('')+'</div></div></div>'
   +'<div class="card chart-card" style="margin-top:16px"><div class="box-title" style="font-size:16px;justify-content:space-between">현직자 노트 (게시글) '+state.posts.length+'개 <button class="btn btn-soft btn-sm" data-act="postAdd">'+ic('plus',15)+'게시글 등록</button></div><div class="list">'+state.posts.map(p=>'<div class="row"><div class="grow"><b>'+esc(p.title)+'</b><span>'+esc(p.author)+' · '+esc(p.rank)+' · '+esc(p.job)+' · ♥ '+p.likes+'</span></div><span class="badge" style="'+(p.visible?'background:var(--point-50);color:#0B7A5C':'')+'">'+(p.visible?'공개':'비공개')+'</span><button class="icon-btn" data-act="postToggle" data-id="'+p.id+'" aria-label="공개 전환">'+ic(p.visible?'eye':'eyeOff',17)+'</button><button class="icon-btn" data-act="postDel" data-id="'+p.id+'" aria-label="삭제">'+ic('trash',16)+'</button></div>').join('')+'</div></div>';
@@ -1919,6 +1993,16 @@ const A={
  /* --- 회사 페이지 · 입사 인증 · 지원 --- */
  myCompanyPage:()=>go('company'),
  guideTab:t=>{ui.guideTab=t.dataset.tab;renderGuide();},
+ guessFb:t=>{if(!ensurePersonal())return;const fb=slangFb(),k=t.dataset.term,v=t.dataset.v;fb[k]=fb[k]===v?undefined:v;save();const o=$('#aiOut');if(o.dataset.text)runAI(o.dataset.text,o.dataset.ex,true);toast(fb[k]==='up'?'피드백 고마워요 — 추정 정확도 개선에 반영돼요':fb[k]==='down'?'틀렸다고 표시했어요. 사내 용어집에 올바른 뜻을 제안할 수 있어요':'피드백을 취소했어요','check');},
+ guessPropose:t=>{if(!ensurePersonal())return;const m=myMember();if(!m){toast('회사 승인을 받으면 우리 회사 용어집에 제안할 수 있어요','shield');return;}const g=SLANG.find(x=>x.term===t.dataset.term);if(!g)return;
+  if(state.glossaryReqs.some(r=>r.companyId===m.companyId&&r.term===g.term&&r.status==='pending')){toast('이미 검수 대기 중인 용어예요','clock');return;}
+  const u=me(),fb=slangFb()[g.term];state.glossaryReqs.unshift({id:nextId('g'),companyId:m.companyId,userId:u.id,term:g.term,meaning:fb==='down'?'':g.plain,context:$('#aiOut').dataset.text||'',conf:g.conf,date:today(),status:'pending',flag:fb==='down'?'사용자가 AI 추정이 틀렸다고 표시':''});addAudit(m.companyId,u.name+' 사내 용어 제안: '+g.term);save();
+  const o=$('#aiOut');if(o.dataset.text)runAI(o.dataset.text,o.dataset.ex,true);toast(company(m.companyId).name+' 교육 담당자에게 "'+g.term+'" 검수를 요청했어요','mail');},
+ glApprove:t=>{const r=state.glossaryReqs.find(x=>x.id===t.dataset.id);if(!r||!guardManage(r.companyId))return;const inp=$('#gl-'+r.id),mean=(inp?inp.value:r.meaning).trim();if(!mean){toast('확정할 뜻을 입력해 주세요','msg');if(inp)inp.focus();return;}
+  const u=me();state.terms=state.terms.filter(x=>!(x.companyId===r.companyId&&x.term===r.term));state.terms.push(Object.assign(T(r.term,'사내 용어','',mean,mean+' ('+company(r.companyId).name+' 사내 용어)',r.context?'"'+r.context+'"':''),{companyId:r.companyId,approvedBy:u.name}));
+  r.status='approved';r.meaning=mean;addAudit(r.companyId,'사내 용어 승인: '+r.term+' = '+mean);save();renderConsole();toast('"'+r.term+'"을(를) 사내 용어집에 등록했어요 — '+company(r.companyId).name+' 직원에게만 보여요','book');},
+ glReject:t=>{const r=state.glossaryReqs.find(x=>x.id===t.dataset.id);if(!r||!guardManage(r.companyId))return;r.status='rejected';addAudit(r.companyId,'사내 용어 반려: '+r.term);save();renderConsole();toast('제안을 반려했어요','x');},
+ glDel:t=>{const u=me();if(!isStaff(u)||!guardManage(u.companyId))return;const term=t.dataset.term;confirmModal('"'+term+'" 사내 용어를 삭제할까요?','이 회사 직원의 사전과 해석기에서 즉시 빠져요.','삭제',()=>{state.terms=state.terms.filter(x=>!(x.companyId===u.companyId&&x.term===term));addAudit(u.companyId,'사내 용어 삭제: '+term);save();renderConsole();toast('삭제했어요','trash');});},
  manCheck:t=>{if(!isPersonal(me()))return;const d=manualDone(),id=t.dataset.id,i=d.indexOf(id);if(i>-1)d.splice(i,1);else d.push(id);save();renderGuide();const total=MANUAL.reduce((a,s)=>a+s.items.length,0);if(i<0&&d.length===total)toast('기본 매뉴얼을 모두 확인했어요! 🎉','check');},
  copyTpl:()=>{const txt=mailTemplate();const ok=()=>toast('메일 예시를 복사했어요','check');try{navigator.clipboard.writeText(txt).then(ok,()=>toast('복사가 막혀 있어요. 직접 선택해 복사해 주세요','x'));}catch(e){toast('복사가 막혀 있어요. 직접 선택해 복사해 주세요','x');}},
  youthFav:t=>{if(!isPersonal(me()))return;const f=youthFav(),i=f.indexOf(t.dataset.id);if(i>-1)f.splice(i,1);else f.push(t.dataset.id);save();renderGuide();toast(i>-1?'관심 저장을 취소했어요':'관심 정책에 저장했어요','star');},
