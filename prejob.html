@@ -321,6 +321,8 @@ h1.title{font-size:32px;line-height:1.25;font-weight:800;letter-spacing:-.035em}
 .wf{border:1px solid var(--line);border-radius:16px;padding:16px;background:#fff;display:flex;flex-direction:column;gap:6px}
 .wf b{font-size:15.5px}
 .wf p{font-size:13.5px;color:var(--ink-2)}
+.wf .amt{font-size:18px;font-weight:800;letter-spacing:-.02em;display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
+.wf .amt span{font-size:12px;font-weight:600;color:var(--ink-3)}
 .wf .how{font-size:12.5px;color:var(--ink-3);padding-top:6px;border-top:1px dashed var(--line);margin-top:auto}
 .yp{display:flex;gap:14px;align-items:flex-start;padding:16px 4px;border-top:1px solid var(--line-2)}
 .yp:first-of-type{border-top:0}
@@ -1061,6 +1063,11 @@ const MANUAL=[
 /* ===== 회사별 복지 (가상 기업 데모 데이터 · 해당 회사 승인 직원에게만 표시) ===== */
 const WELFARE={
  alpha:[
+  {cat:'보상',title:'연간 성과급',amt:'연봉의 0~20%',when:'매년 3월',desc:'회사 실적과 개인 평가(OKR)에 따라 차등 지급해요. 입사 첫해는 근무 개월 수만큼 비례 지급해요.',how:'별도 신청 없음 · 평가 확정 후 급여와 함께 지급'},
+  {cat:'보상',title:'명절 상여금 (떡값)',amt:'설·추석 각 50만 원',when:'명절 직전 급여일',desc:'설과 추석에 상여금과 함께 명절 선물세트(택1)를 드려요.',how:'선물세트는 명절 2주 전 사내 설문으로 선택'},
+  {cat:'보상',title:'경조사 지원',amt:'결혼 100만 원 · 출산 50만 원',when:'발생 시',desc:'본인 결혼 시 특별휴가 5일, 배우자 출산 시 휴가 10일과 축하금을 지원해요. 조사 시 조의금과 근조 화환도 보내요.',how:'경조사 발생 7일 이내 인사팀에 증빙 제출'},
+  {cat:'보상',title:'생일 축하금',amt:'10만 원 상품권',when:'생일이 있는 달',desc:'생일 당일 반차와 함께 상품권을 드려요.',how:'자동 지급 · 반차는 근태 시스템에서 신청'},
+  {cat:'보상',title:'장기근속 포상',amt:'3년차 100만 원 + 휴가 5일',when:'입사 기념일',desc:'3·5·10년 근속 시 포상금과 리프레시 휴가를 드려요.',how:'자동 지급 · 휴가는 1년 안에 사용'},
   {cat:'근무',title:'유연출근제',desc:'오전 8~11시 사이에 자유롭게 출근하고 하루 8시간 근무해요.',how:'주간 출근 시간을 팀 캘린더에 공유'},
   {cat:'성장',title:'도서·교육비 지원',desc:'도서·강의·자격증 비용을 연 120만 원까지 지원해요.',how:'영수증을 첨부해 경비 시스템에 신청'},
   {cat:'온보딩',title:'버디 매칭',desc:'입사 첫 4주 동안 버디와 매일 15분씩 체크인해요.',how:'입사 첫날 인사담당이 배정'},
@@ -1069,6 +1076,11 @@ const WELFARE={
   {cat:'생활',title:'점심 식대',desc:'근무일 점심 식대를 1만 원까지 지원해요.',how:'법인카드로 결제 후 당일 증빙 등록'}
  ],
  beta:[
+  {cat:'보상',title:'분기 생산성 인센티브',amt:'분기 30만~100만 원',when:'분기 마감 다음 달',desc:'센터 생산성(UPH)과 안전 목표 달성률에 따라 팀 단위로 지급해요.',how:'별도 신청 없음 · 분기 실적 확정 후 지급'},
+  {cat:'보상',title:'연말 성과급',amt:'기본급의 100~300%',when:'매년 1월',desc:'회사 연간 영업이익 목표를 달성하면 전 직원에게 지급해요.',how:'별도 신청 없음 · 재직 중인 직원 대상'},
+  {cat:'보상',title:'명절 상여금 (떡값)',amt:'설·추석 각 기본급의 50%',when:'명절 직전 급여일',desc:'명절 상여금과 함께 지역 특산물 선물세트를 드려요.',how:'자동 지급 · 선물은 센터에서 수령'},
+  {cat:'보상',title:'야간·휴일 근무 수당',amt:'법정 가산 + 1회 1만 원',when:'매월 급여일',desc:'야간(22시~06시)·휴일 근무는 법정 가산 수당에 센터 자체 수당을 더해 드려요.',how:'근무표에 따라 자동 계산'},
+  {cat:'보상',title:'경조사 지원',amt:'결혼 50만 원 · 출산 30만 원',when:'발생 시',desc:'경조 휴가와 축하금·조의금을 지원해요.',how:'경조사 발생 7일 이내 총무팀에 증빙 제출'},
   {cat:'출퇴근',title:'통근버스',desc:'이천·여주·수원 방면 통근버스를 무료로 운영해요.',how:'노선표 확인 후 총무팀에 탑승 등록'},
   {cat:'안전',title:'안전 장비 전액 지원',desc:'안전화·안전조끼·장갑 등 보호구를 전액 지급해요.',how:'입사 첫날 안전 교육 후 수령'},
   {cat:'생활',title:'사내 식당 3식',desc:'센터 사내 식당에서 하루 3식을 무료로 제공해요.',how:'사원증 태그로 이용'},
@@ -1478,7 +1490,10 @@ function renderGuide(){
  }else{
   const m=myMember(),fav=youthFav();
   if(m){const c=company(m.companyId),wf=WELFARE[c.id]||[];
-   h+='<div class="sec-title" style="font-size:17px;margin-top:0">'+ic('building',18)+esc(c.name)+' 복지 <span class="badge">승인된 직원에게만 보여요</span></div><div class="wf-grid">'+wf.map(w=>'<div class="wf"><span class="badge" style="width:max-content;background:'+c.color+'1A;color:'+c.color+'">'+esc(w.cat)+'</span><b>'+esc(w.title)+'</b><p>'+esc(w.desc)+'</p><div class="how">신청 방법 · '+esc(w.how)+'</div></div>').join('')+'</div>';}
+   const card=w=>'<div class="wf"><span class="badge" style="width:max-content;background:'+c.color+'1A;color:'+c.color+'">'+esc(w.cat)+'</span><b>'+esc(w.title)+'</b>'+(w.amt?'<div class="amt" style="color:'+c.color+'">'+esc(w.amt)+'<span>'+esc(w.when)+'</span></div>':'')+'<p>'+esc(w.desc)+'</p><div class="how">'+(w.cat==='보상'?'지급 방법':'신청 방법')+' · '+esc(w.how)+'</div></div>';
+   h+='<div class="sec-title" style="font-size:17px;margin-top:0">'+ic('building',18)+esc(c.name)+' 복지·보상 <span class="badge">승인된 직원에게만 보여요</span></div><div class="disclaimer">'+ic('clock',15)+'<span>가상 기업의 더미 데이터예요. 실제 금액과 지급 기준은 회사 취업규칙·급여 규정으로 확인하세요.</span></div>'
+   +'<div class="sub-h" style="margin-top:12px">💰 성과급·상여·수당</div><div class="wf-grid">'+wf.filter(w=>w.cat==='보상').map(card).join('')+'</div>'
+   +'<div class="sub-h">🎁 복지 제도</div><div class="wf-grid">'+wf.filter(w=>w.cat!=='보상').map(card).join('')+'</div>';}
   else h+='<div class="login-nudge" style="margin:0 0 6px"><span>회사 승인을 받으면 우리 회사 복지가 여기에 보여요. (다른 회사 복지는 볼 수 없어요)</span><button class="btn btn-primary btn-sm" data-act="verifyOpen">회사 승인 받기</button></div>';
   h+='<div class="sec-title" style="font-size:17px;margin-top:22px">'+ic('star',18)+'국가·지자체 청년 지원</div><div class="disclaimer">'+ic('clock',15)+'<span>2026년 11월 기준 요약이에요. 금액·대상·기간은 바뀔 수 있으니 신청 전에 공식 사이트에서 꼭 확인하세요.</span></div><div>'
   +YOUTH.map(y=>{const on=fav.indexOf(y.id)>-1;return '<div class="yp"><span class="tagbox" style="background:'+y.bg+';color:'+y.fg+'">'+esc(y.tag)+'</span><div class="grow"><b>'+esc(y.title)+'</b><p>'+esc(y.desc)+'</p><div class="meta">대상 · '+esc(y.who)+'</div><div class="meta">신청 · '+esc(y.how)+' ('+esc(y.org)+')</div><div class="acts"><a class="btn btn-soft btn-sm" href="'+y.url+'" target="_blank" rel="noopener noreferrer" data-ext="1">공식 사이트 '+ic('external',13)+'</a><button class="btn btn-sm '+(on?'btn-primary':'btn-ghost')+'" data-act="youthFav" data-id="'+y.id+'">'+ic('star',13,on)+(on?'관심 저장됨':'관심 저장')+'</button></div></div></div>';}).join('')+'</div>';
